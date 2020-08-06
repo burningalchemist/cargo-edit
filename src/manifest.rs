@@ -11,7 +11,6 @@ use crate::dependency::Dependency;
 use crate::errors::*;
 
 use semver::{Version, VersionReq};
-use toml_edit::Value;
 
 const MANIFEST_FILENAME: &str = "Cargo.toml";
 
@@ -481,11 +480,9 @@ impl LocalManifest {
         let table_path = &["package".to_string()];
         let table = self.manifest.get_table(table_path)?.as_table_mut();
         if let Some(table) = table {
-            let version_str: Value = format!("{:?}", version.to_string())
-                .parse()
-                .expect("valid toml");
+            let version_str = toml_edit::value(version.to_string());
             if let Some(v) = table.entry("version").as_value_mut() {
-                *v = toml_edit::decorated(version_str, " ", "");
+                *v = (*version_str.as_value().unwrap()).clone();
                 if !dry_run {
                     let mut file = self.get_file()?;
                     self.write_to_file(&mut file)
